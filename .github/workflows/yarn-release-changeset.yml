@@ -7,6 +7,8 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      YARN_ENABLE_IMMUTABLE_INSTALLS: false
     steps:
       - uses: actions/checkout@v3
 
@@ -23,6 +25,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          commit: 'chore: version packages'
           version: yarn version
           publish: yarn changeset publish
         env:
