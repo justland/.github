@@ -6,11 +6,12 @@ jobs:
   npm:
     runs-on: ubuntu-latest
     steps:
-      - run: git config --global core.eol LF
-      - run: git config --global core.autocrlf false
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 7.2.1
       - uses: actions/setup-node@v3
         with:
           node-version: 16
