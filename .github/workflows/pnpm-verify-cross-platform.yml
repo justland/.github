@@ -1,4 +1,4 @@
-name: yarn-verify-cross-platform
+name: pnpm-verify-cross-platform
 on:
   workflow_call:
     inputs:
