@@ -5,8 +5,8 @@ on:
       pnpm-version:
         type: string
         required: false
-        default: 7.17.1
-      publish-dir:
+        default: 8.3.1
+      publish_dir:
         type: string
         required: false
         default: ./docs
@@ -23,7 +23,7 @@ jobs:
           version: ${{ inputs.pnpm-version }}
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           cache: pnpm
 
       - run: pnpm install
