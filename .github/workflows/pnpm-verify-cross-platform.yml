@@ -5,11 +5,11 @@ on:
       node-version:
         type: string
         required: false
-        default: "[14, 16, 18]"
+        default: "[16, 18, 20]"
       pnpm-version:
         type: string
         required: false
-        default: 8.3.1
+        default: 8.6.0
 jobs:
   verify:
     runs-on: ${{ matrix.os }}

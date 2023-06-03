@@ -5,7 +5,7 @@ on:
       pnpm-version:
         type: string
         required: false
-        default: 8.3.1
+        default: 8.6.0
       publish_dir:
         type: string
         required: false
