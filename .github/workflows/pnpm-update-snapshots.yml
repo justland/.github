@@ -43,7 +43,7 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
       - name: Install playwright browsers
-        run: pnpx playwright install --with-deps
+        run: pnpx playwright install --with-deps chromium
       - name: Update Snapshots
         run: pnpm update_snapshots
       - run: 'git commit -am "test: update snapshots"'
