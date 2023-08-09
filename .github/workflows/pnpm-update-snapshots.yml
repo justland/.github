@@ -13,7 +13,7 @@ on:
       pnpm_version:
         type: string
         required: false
-        default: 7.16.1
+        default: 8.6.12
       update_snapshots:
         type: boolean
         required: false
