@@ -48,4 +48,4 @@ jobs:
         run: pnpm update_snapshots
       - name: Commit and Push
         run: 'git commit -am "test: update snapshots" && git push -f -u origin HEAD:refs/heads/${GITHUB_HEAD_REF} || true'
-        if: 'git status --porcelain'
+        if: ${{ git status --porcelain }}
