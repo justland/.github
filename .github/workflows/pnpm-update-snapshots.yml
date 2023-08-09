@@ -45,4 +45,5 @@ jobs:
       - name: Update Snapshots
         run: pnpm update_snapshots
       - run: 'git commit -am "test: update snapshots"'
-      - run: git push -u
+      - run: git remote show origin
+      - run: '!(git status -sb | grep behind) && git push -f -u origin HEAD || true'
