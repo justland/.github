@@ -45,4 +45,4 @@ jobs:
       - name: Update Snapshots
         run: pnpm update_snapshots
       - run: 'git commit -am "test: update snapshots"'
-      - run: git push
+      - run: git push -u
