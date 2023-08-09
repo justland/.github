@@ -14,6 +14,10 @@ on:
         type: string
         required: false
         default: 8.6.12
+      coverage_files:
+        type: string
+        required: false
+        default: '**/coverage/**'
 jobs:
   verify:
     runs-on: ${{ matrix.os }}
@@ -42,3 +46,5 @@ jobs:
       - name: codecov
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == 18
         uses: codecov/codecov-action@v3
+        with:
+          files: ${{ inputs.coverage_files }}
