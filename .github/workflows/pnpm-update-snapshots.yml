@@ -46,5 +46,6 @@ jobs:
         run: pnpx playwright install --with-deps chromium
       - name: Update Snapshots
         run: pnpm update_snapshots
-      - run: 'git commit -am "test: update snapshots"'
-      - run: '!(git status -sb | grep behind) && git push -f -u origin HEAD:refs/heads/${GITHUB_HEAD_REF} || true'
+      - name: Commit and Push
+        run: 'git commit -am "test: update snapshots" && git push -f -u origin HEAD:refs/heads/${GITHUB_HEAD_REF} || true'
+        if: 'git status --porcelain'
