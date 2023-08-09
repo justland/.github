@@ -41,5 +41,5 @@ jobs:
         run: pnpm install
       - name: Update Snapshots
         run: pnpm update_snapshots
-      - git commit -am "Update Snapshots"
-      - git push
+      - run: git commit -am "Update Snapshots"
+      - run: git push
