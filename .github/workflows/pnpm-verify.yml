@@ -9,11 +9,10 @@ on:
       node-version:
         type: string
         required: false
-        default: '[16, 18, 20]'
+        default: '[18, 20, 22]'
       pnpm-version:
         type: string
         required: false
-        default: 8.6.12
       coverage_files:
         type: string
         required: false
@@ -44,7 +43,7 @@ jobs:
         run: pnpm verify
 
       - name: codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 18
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 20
         uses: codecov/codecov-action@v3
         with:
           files: ${{ inputs.coverage_files }}
