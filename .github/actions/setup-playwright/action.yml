@@ -5,10 +5,10 @@ inputs:
     description: "Space-separated list of browsers to install (e.g., 'chromium', 'chromium webkit')"
     required: false
     default: "chromium"
-  lock-file:
-    description: "Path to the lock file to use (e.g., 'pnpm-lock.yaml')"
+  extract-version-command:
+    description: "Command to extract the Playwright version from the lock file"
     required: false
-    default: "pnpm-lock.yaml"
+    default: "pnpm ls playwright --version"
   package-manager-command:
     description: "Command to install Playwright browsers and dependencies (e.g., 'pnpx', 'bun x')"
     required: false
@@ -21,7 +21,7 @@ runs:
       shell: bash
       run: |
         # Extract Playwright version from lock file
-        VERSION=$(grep -A1 '"playwright":' ${{ inputs.lock-file }} | grep -oP '"\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        VERSION=$(${{ inputs.extract-version-command }})
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Playwright version: $VERSION"
 
