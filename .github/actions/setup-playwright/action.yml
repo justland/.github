@@ -8,7 +8,7 @@ inputs:
   extract-version-command:
     description: "Command to extract the Playwright version from the lock file"
     required: false
-    default: "pnpm ls playwright --version"
+    default: "pnpm playwright --version | grep -oE '[0-9]+(\\.[0-9]+)+'"
   package-manager-command:
     description: "Command to install Playwright browsers and dependencies (e.g., 'pnpx', 'bun x')"
     required: false
