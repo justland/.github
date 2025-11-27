@@ -5,12 +5,8 @@ inputs:
     description: "Space-separated list of browsers to install (e.g., 'chromium', 'chromium webkit')"
     required: false
     default: "chromium"
-  extract-version-command:
-    description: "Command to extract the Playwright version from the lock file"
-    required: false
-    default: "pnpm playwright --version | grep -oE '[0-9]+(\\.[0-9]+)+'"
-  package-manager-command:
-    description: "Command to install Playwright browsers and dependencies (e.g., 'pnpx', 'bun x')"
+  package-manager:
+    description: "Package manager to use (pnpm, npm, yarn, bun, deno)"
     required: false
     default: "pnpm"
 runs:
@@ -20,8 +16,28 @@ runs:
       id: playwright-version
       shell: bash
       run: |
-        # Extract Playwright version from lock file
-        VERSION=$(${{ inputs.extract-version-command }})
+        # Extract Playwright version based on package manager
+        case "${{ inputs.package-manager }}" in
+          pnpm)
+            VERSION=$(pnpm exec playwright --version | grep -oE '[0-9]+(\.[0-9]+)+')
+            ;;
+          npm)
+            VERSION=$(npm exec playwright -- --version | grep -oE '[0-9]+(\.[0-9]+)+')
+            ;;
+          yarn)
+            VERSION=$(yarn exec playwright --version | grep -oE '[0-9]+(\.[0-9]+)+')
+            ;;
+          bun)
+            VERSION=$(bun run playwright --version | grep -oE '[0-9]+(\.[0-9]+)+')
+            ;;
+          deno)
+            VERSION=$(deno run playwright --version | grep -oE '[0-9]+(\.[0-9]+)+')
+            ;;
+          *)
+            echo "Unsupported package manager: ${{ inputs.package-manager }}"
+            exit 1
+            ;;
+        esac
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Playwright version: $VERSION"
 
@@ -37,4 +53,25 @@ runs:
     - name: Install Playwright browsers
       if: steps.cache-playwright.outputs.cache-hit != 'true'
       shell: bash
-      run: ${{ inputs.package-manager-command }} playwright install --with-deps ${{ inputs.browsers }}
+      run: |
+        case "${{ inputs.package-manager }}" in
+          pnpm)
+            pnpm exec playwright install --with-deps ${{ inputs.browsers }}
+            ;;
+          npm)
+            npm exec playwright install --with-deps ${{ inputs.browsers }}
+            ;;
+          yarn)
+            yarn exec playwright install --with-deps ${{ inputs.browsers }}
+            ;;
+          bun)
+            bun run playwright install --with-deps ${{ inputs.browsers }}
+            ;;
+          deno)
+            deno run playwright install --with-deps ${{ inputs.browsers }}
+            ;;
+          *)
+            echo "Unsupported package manager: ${{ inputs.package-manager }}"
+            exit 1
+            ;;
+        esac
