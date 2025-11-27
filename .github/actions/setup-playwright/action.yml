@@ -12,7 +12,7 @@ inputs:
   package-manager-command:
     description: "Command to install Playwright browsers and dependencies (e.g., 'pnpx', 'bun x')"
     required: false
-    default: "pnpx"
+    default: "pnpm"
 runs:
   using: "composite"
   steps:
