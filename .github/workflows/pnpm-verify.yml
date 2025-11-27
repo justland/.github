@@ -9,7 +9,7 @@ on:
       node-version:
         type: string
         required: false
-        default: '[18, 20, 22]'
+        default: '[20, 22, 24]'
       pnpm-version:
         type: string
         required: false
@@ -37,7 +37,7 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
       - name: Install playwright browsers
-        run: pnpx playwright install --with-deps chromium
+        uses: ./.github/actions/setup-playwright
 
       - name: Verify
         run: pnpm verify
