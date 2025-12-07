@@ -1,5 +1,9 @@
 name: "Check Playwright"
 description: "Check if Playwright is installed"
+outputs:
+  has-playwright:
+    description: "Whether Playwright is installed"
+    value: ${{ steps.check-playwright.outputs.has-playwright }}
 runs:
   using: "composite"
   steps:
