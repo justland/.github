@@ -36,7 +36,17 @@ jobs:
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install
+      - name: Check for Playwright
+        id: check-playwright
+        shell: bash
+        run: |
+          if grep -q '"playwright"' package.json || grep -q "'playwright'" package.json; then
+            echo "has-playwright=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-playwright=false" >> $GITHUB_OUTPUT
+          fi
       - name: Install playwright browsers
+        if: steps.check-playwright.outputs.has-playwright == 'true'
         uses: justland/.github/.github/actions/setup-playwright@main
 
       - name: Verify

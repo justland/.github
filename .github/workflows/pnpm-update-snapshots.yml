@@ -41,8 +41,20 @@ jobs:
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
       - name: Install Dependencies
         run: pnpm install
+
+      - name: Check for Playwright
+        id: check-playwright
+        shell: bash
+        run: |
+          if grep -q '"playwright"' package.json || grep -q "'playwright'" package.json; then
+            echo "has-playwright=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-playwright=false" >> $GITHUB_OUTPUT
+          fi
       - name: Install playwright browsers
-        run: pnpx playwright install --with-deps chromium
+        if: steps.check-playwright.outputs.has-playwright == 'true'
+        uses: justland/.github/.github/actions/setup-playwright@main
+
       - name: Update Snapshots
         run: pnpm update_snapshots
       - name: Commit and Push
