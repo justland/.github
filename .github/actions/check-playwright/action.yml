@@ -1,0 +1,14 @@
+name: "Check Playwright"
+description: "Check if Playwright is installed"
+runs:
+  using: "composite"
+  steps:
+    - name: Check for Playwright
+      id: check-playwright
+      shell: bash
+      run: |
+        if grep -q '"playwright"' package.json || grep -q "'playwright'" package.json; then
+          echo "has-playwright=true" >> $GITHUB_OUTPUT
+        else
+          echo "has-playwright=false" >> $GITHUB_OUTPUT
+        fi
