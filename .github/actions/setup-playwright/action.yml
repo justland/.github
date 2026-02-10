@@ -12,6 +12,25 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Set Playwright cache path
+      id: cache-path
+      shell: bash
+      run: |
+        case "${{ runner.os }}" in
+          Linux)
+            echo "path=$HOME/.cache/ms-playwright" >> $GITHUB_OUTPUT
+            ;;
+          Windows)
+            echo "path=${USERPROFILE}/AppData/Local/ms-playwright" >> $GITHUB_OUTPUT
+            ;;
+          macOS)
+            echo "path=$HOME/Library/Caches/ms-playwright" >> $GITHUB_OUTPUT
+            ;;
+          *)
+            echo "path=$HOME/.cache/ms-playwright" >> $GITHUB_OUTPUT
+            ;;
+        esac
+
     - name: Get Playwright version
       id: playwright-version
       shell: bash
@@ -45,10 +64,10 @@ runs:
       id: cache-playwright
       uses: actions/cache@v4
       with:
-        path: ~/.cache/ms-playwright
+        path: ${{ steps.cache-path.outputs.path }}
         key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-${{ inputs.browsers }}
         restore-keys: |
-          ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-
+          ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}--${{ inputs.browsers }}
 
     - name: Install Playwright browsers
       if: steps.cache-playwright.outputs.cache-hit != 'true'
