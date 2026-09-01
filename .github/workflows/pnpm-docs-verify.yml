@@ -1,4 +1,7 @@
 name: docs-verify
+# Verifies that the docs site still builds. Declares no inputs; both callers
+# (just-web.github.io's pull-request.yml and release.yml) pass neither `with:`
+# nor `secrets:`, so adding a *required* input here would break them instantly.
 on:
   workflow_call:
 
@@ -6,13 +9,30 @@ jobs:
   npm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: lts/*
           cache: pnpm
 
-      - uses: actions/download-artifact@v2
+      # `actions/download-artifact@v2` used to sit here. It was retired by GitHub, and a
+      # retired artifact action does not warn - the job dies in ~3 seconds with no logs,
+      # which is what broke just-web.github.io. It was also doing nothing even when it
+      # worked: nothing in this workflow uploads an artifact, and download-artifact only
+      # sees artifacts from its own run, so it resolved to an empty download every time.
+      # Removed rather than bumped to v6 - there is no artifact here to fetch.
+
       - run: pnpm install
       - run: pnpm build
+
+  all-checks:
+    needs: [npm]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: All checks passed
+        run: |
+          if [[ "${{ needs.npm.result }}" != "success" ]]; then
+            exit 1
+          fi

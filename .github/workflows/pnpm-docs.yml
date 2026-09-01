@@ -5,29 +5,39 @@ on:
       pnpm-version:
         type: string
         required: false
+      # Load-bearing: just-web-react-image-compare publishes
+      # ./packages/react-image-compare/storybook-static through this input rather than
+      # the default. Renaming or removing it breaks that repo's docs publish.
       publish-dir:
         type: string
         required: false
         default: ./docs
+      node-version:
+        type: string
+        required: false
+        default: lts/*
 
 jobs:
   npm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: ${{ inputs.node-version }}
           cache: pnpm
 
       - run: pnpm install
+      # Both build steps stay. cyberuni's copy of this workflow runs only `build:doc`,
+      # but the justland callers' docs builds consume the package build output, so
+      # dropping `pnpm build` here would break them.
       - run: pnpm build
       - run: pnpm build:doc
       - name: publish docs
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ${{ inputs.publish-dir }}
