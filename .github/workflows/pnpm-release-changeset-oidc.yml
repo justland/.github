@@ -1,0 +1,117 @@
+name: pnpm-release-changeset-oidc
+# Secretless variant of pnpm-release-changeset.yml.
+#
+# Differences from that workflow:
+#   - No CI_GITHUB_TOKEN. Uses the built-in GITHUB_TOKEN with elevated `permissions`.
+#     Trade-off: a PR opened with GITHUB_TOKEN does not trigger `on: pull_request`
+#     workflows, so the "version packages" PR gets no status checks. That is fine for a
+#     mechanical version + changelog bump, since the release job only runs after the
+#     push to the base branch has already been verified.
+#   - No NPM_TOKEN. Publishes via npm trusted publishing (OIDC), which also emits
+#     provenance attestations. Each package must have a trusted publisher registered at
+#     npmjs.com/package/<name>/access naming the repo and the *caller* workflow's
+#     filename (release.yml), not this file.
+#
+# The argument for this over pnpm-release-changeset.yml is that CI_GITHUB_TOKEN and
+# NPM_TOKEN are long-lived credentials that expire silently and are worth stealing.
+# OIDC credentials are minted per run and last minutes.
+#
+# Ported from cyberuni/.github's workflow of the same name. The one intentional
+# divergence: that copy pins actions/checkout and actions/setup-node at v6 here to match
+# the rest of justland/.github rather than v7.
+#
+# Added alongside pnpm-release-changeset.yml rather than replacing it, so repos that have
+# not migrated keep working.
+on:
+  workflow_call:
+    inputs:
+      pnpm-version:
+        type: string
+        required: false
+      node-version:
+        type: string
+        required: false
+        default: lts/*
+    outputs:
+      published:
+        description: 'Whether the release was published'
+        value: ${{ jobs.release.outputs.published }}
+
+permissions:
+  # Mints the OIDC token npm exchanges for short-lived publish credentials.
+  id-token: write
+  # Lets changesets/action push the version branch and tags.
+  contents: write
+  # Lets changesets/action open the "version packages" PR.
+  pull-requests: write
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # Version comes from `packageManager` in package.json unless overridden.
+      # No `with: version:` — an empty `pnpm-version` input passed through has bitten
+      # this action before, and every existing justland workflow already resolves pnpm
+      # from `packageManager` the same way. The input stays declared so the ~14 callers
+      # migrating off pnpm-release-changeset.yml can keep passing it unchanged.
+      - uses: pnpm/action-setup@v6
+
+      # No `registry-url:` on purpose. It only exists to write an auth stanza —
+      # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` in a temp .npmrc — which
+      # this secretless workflow can never fill in. Every npm and pnpm invocation then
+      # warns "Failed to replace env in config", and worse, `changeset publish`'s
+      # "is this version already on the registry?" probe comes back empty, so it tries
+      # to publish an already-published version and dies on npm's E403
+      # "You cannot publish over the previously published versions". The registry itself
+      # is not at stake: npmjs.org is npm's default, and repos that care say so in their
+      # own .npmrc.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      # Trusted publishing requires npm 11.5.1+, so Node LTS's bundled npm may be too old.
+      #
+      # Pinned to 11 rather than latest: npm 12 changed `npm info --json` to wrap its
+      # output in an array (changesets/changesets#2164). @changesets/cli 2.x reads
+      # `.versions` straight off the parsed value, sees undefined, concludes every
+      # version is unpublished and republishes into E403. cli 3.x fixed that for its npm
+      # code path but NOT its pnpm one, and `pnpm info` just delegates to whichever npm
+      # is on PATH — so on a pnpm workspace npm 12 turns the E403 into a TypeError in
+      # getUnpublishedPackages instead. Pinning npm keeps both majors of changesets
+      # working; revisit once the pnpm parser upstream unwraps the array too.
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@11
+          npm --version
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - run: pnpm build
+
+      # changesets/action v2 is the release matched to @changesets/cli v3, which every
+      # caller now needs: npm 12 changed `npm info --json` to emit an array, and cli 2.x
+      # reads `.versions` straight off the parsed object. It comes back undefined, every
+      # version looks unpublished, and the release republishes into npm's E403
+      # "You cannot publish over the previously published versions".
+      #
+      # v2 renamed the inputs (version -> version-script, publish -> publish-script,
+      # commit -> commit-message) and dropped the GITHUB_TOKEN *env var* in favour of the
+      # github-token *input*. The old names are silently ignored, so a half-done bump
+      # leaves the action running with no publish script at all.
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v2.1.0
+        with:
+          commit-message: 'chore: version packages'
+          version-script: pnpm run version
+          publish-script: pnpm run release
