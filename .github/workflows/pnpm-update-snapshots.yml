@@ -1,4 +1,7 @@
 name: pnpm-update-snapshots
+# Input names here use underscores (node_version, pnpm_version, update_snapshots) while
+# every other workflow in this repo uses hyphens. That is inconsistent, but the names are
+# the API: renaming them breaks callers, so they stay. New workflows should use hyphens.
 on:
   workflow_call:
     inputs:
@@ -9,7 +12,9 @@ on:
       node_version:
         type: string
         required: false
-        default: '[16, 18, 20]'
+        # Was '[16, 18, 20]'. Node 16 and 18 are both end-of-life and setup-node can no
+        # longer resolve 16 on current runners, so the default matrix could not run.
+        default: '["lts/-1", "lts/*"]'
       pnpm_version:
         type: string
         required: false
@@ -19,19 +24,24 @@ on:
         default: false
 jobs:
   update_snapshots:
-    if: ${{ inputs.update_snapshots  }}
+    if: ${{ inputs.update_snapshots }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(inputs.os) }}
         node-version: ${{ fromJson(inputs.node_version) }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v4
-      - name: Use Node.js ${{ matrix.node_version }}
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      # The matrix key is `node-version` (hyphen). The steps below referenced
+      # `matrix.node_version` (underscore), which does not exist, so setup-node received
+      # an empty node-version and silently used whatever Node the runner shipped - the
+      # matrix leg was a lie.
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node_version }}
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
       - name: git config
         run: |
@@ -40,21 +50,26 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
+      # Replaces an inline grep of package.json with the same composite action
+      # pnpm-verify.yml uses, so the detection rule lives in one place.
       - name: Check for Playwright
         id: check-playwright
-        shell: bash
-        run: |
-          if grep -q '"playwright"' package.json || grep -q "'playwright'" package.json; then
-            echo "has-playwright=true" >> $GITHUB_OUTPUT
-          else
-            echo "has-playwright=false" >> $GITHUB_OUTPUT
-          fi
+        uses: justland/.github/.github/actions/check-playwright@main
       - name: Install playwright browsers
         if: steps.check-playwright.outputs.has-playwright == 'true'
         uses: justland/.github/.github/actions/setup-playwright@main
 
       - name: Update Snapshots
         run: pnpm update_snapshots
+
+      # The guard was `if: ${{ git status --porcelain }}`, which is not an expression at
+      # all - actionlint rejects it and Actions fails the whole workflow at parse time.
+      # A shell command cannot be evaluated in an `if:`; the check has to run in the step.
       - name: Commit and Push
-        run: 'git commit -am "test: update snapshots" && git push -f -u origin HEAD:refs/heads/${GITHUB_HEAD_REF} || true'
-        if: ${{ git status --porcelain }}
+        run: |
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No snapshot changes to commit."
+            exit 0
+          fi
+          git commit -am "test: update snapshots"
+          git push -f -u origin "HEAD:refs/heads/${GITHUB_HEAD_REF}"
