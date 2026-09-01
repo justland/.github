@@ -13,12 +13,16 @@ jobs:
   verify:
     runs-on: ${{ matrix.os }}
     strategy:
+      # Report every leg; with fail-fast on, the first failure cancels the rest and they
+      # report "The operation was canceled" instead of their own result.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node-version: ${{ fromJson(inputs.node-version) }}
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      # v4 runs on the Node 20 runtime and raises a deprecation annotation on every job.
+      - uses: pnpm/action-setup@v6
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
