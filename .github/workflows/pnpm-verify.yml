@@ -17,16 +17,38 @@ on:
         type: string
         required: false
         default: '**/coverage/**'
+      skip-codecov:
+        type: boolean
+        required: false
+        default: false
+      skip-playwright:
+        type: boolean
+        required: false
+        default: false
+      # Which matrix leg uploads coverage. Defaults to `lts/*`, which is what the
+      # condition below hardcoded before, so the default behaviour is unchanged. Callers
+      # whose `node-version` matrix contains no `lts/*` must set this to a value it does
+      # contain, or nothing uploads.
+      codecov-node-version:
+        type: string
+        required: false
+        default: 'lts/*'
 jobs:
   verify:
     runs-on: ${{ matrix.os }}
     strategy:
+      # Report every leg. With fail-fast on, the first failure cancels the others and
+      # they report "The operation was canceled" with no error of their own - which hides
+      # which legs are actually broken and sends you reading the wrong log.
+      fail-fast: false
       matrix:
         os: ${{ fromJson(inputs.os) }}
         node-version: ${{ fromJson(inputs.node-version) }}
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      # v4 runs on the Node 20 runtime, which GitHub now emits a deprecation annotation
+      # for on every single job of every consumer. v6 moves to a supported runtime.
+      - uses: pnpm/action-setup@v6
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
@@ -36,16 +58,19 @@ jobs:
         run: pnpm install
       - name: Check for Playwright
         id: check-playwright
+        if: inputs.skip-playwright == false
         uses: justland/.github/.github/actions/check-playwright@main
       - name: Install playwright browsers
-        if: steps.check-playwright.outputs.has-playwright == 'true'
+        if: inputs.skip-playwright == false && steps.check-playwright.outputs.has-playwright == 'true'
         uses: justland/.github/.github/actions/setup-playwright@main
 
       - name: Verify
         run: pnpm verify
 
+      # Coverage never gates a merge, so this must stay non-fatal: a Codecov outage must
+      # not fail `verify` and with it the required `code / all-checks` context.
       - name: codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 'lts/*'
+        if: inputs.skip-codecov == false && matrix.os == 'ubuntu-latest' && matrix.node-version == inputs.codecov-node-version
         uses: codecov/codecov-action@v6
         with:
           files: ${{ inputs.coverage_files }}

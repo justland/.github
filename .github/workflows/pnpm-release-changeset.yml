@@ -1,10 +1,20 @@
 name: pnpm-release-changeset
+# Token-based changesets release. Requires the NPM_TOKEN and CI_GITHUB_TOKEN secrets.
+#
+# Prefer pnpm-release-changeset-oidc.yml for new callers: it needs neither secret,
+# publishing through npm trusted publishing and pushing the version PR with the built-in
+# GITHUB_TOKEN. This workflow is kept, and kept working, for repos that have not
+# registered a trusted publisher yet.
 on:
   workflow_call:
     inputs:
       pnpm-version:
         type: string
         required: false
+      node-version:
+        type: string
+        required: false
+        default: lts/*
     outputs:
       published:
         description: 'Whether the release was published'
@@ -25,14 +35,14 @@ jobs:
     outputs:
       published: ${{ steps.changesets.outputs.published }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.CI_GITHUB_TOKEN }}
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: lts/*
+          node-version: ${{ inputs.node-version }}
           cache: pnpm
 
       - name: Install Dependencies
@@ -40,13 +50,20 @@ jobs:
 
       - run: pnpm build
 
+      # This was a `cat << EOF` heredoc with no closing EOF, whose single line was also
+      # indented four spaces. Bash accepted it only with a "here-document delimited by
+      # end-of-file" warning, and wrote a leading-whitespace auth line into .npmrc.
+      # printf has no delimiter to lose and no indentation to strip.
       - name: update .npmrc with token
-        run: |
-          cat << EOF > "$HOME/.npmrc"
-            //registry.npmjs.org/:_authToken=$NPM_TOKEN
+        run: printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      # Deliberately still v1. changesets/action v2 renames every input
+      # (version -> version-script, publish -> publish-script, commit -> commit-message)
+      # and is the release matched to @changesets/cli v3; bumping it here would depend on
+      # each caller's own @changesets/cli major, which this repo cannot see. Callers that
+      # want v2 should move to pnpm-release-changeset-oidc.yml, which is on it.
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
