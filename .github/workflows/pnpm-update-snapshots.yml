@@ -39,7 +39,7 @@ jobs:
       # an empty node-version and silently used whatever Node the runner shipped - the
       # matrix leg was a lie.
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm

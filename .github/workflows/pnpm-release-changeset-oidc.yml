@@ -73,7 +73,7 @@ jobs:
       # "You cannot publish over the previously published versions". The registry itself
       # is not at stake: npmjs.org is npm's default, and repos that care say so in their
       # own .npmrc.
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ inputs.node-version }}
           cache: pnpm
