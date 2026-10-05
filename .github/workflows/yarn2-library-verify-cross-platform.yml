@@ -32,6 +32,8 @@ jobs:
 
       - name: codecov
         uses: codecov/codecov-action@v3
+        # A coverage upload must never fail CI: the tests are the gate.
+        continue-on-error: true
         with:
           files: "**/coverage/clover.xml"
 
