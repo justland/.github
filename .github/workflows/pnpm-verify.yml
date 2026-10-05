@@ -71,7 +71,7 @@ jobs:
       # not fail `verify` and with it the required `code / all-checks` context.
       - name: codecov
         if: inputs.skip-codecov == false && matrix.os == 'ubuntu-latest' && matrix.node-version == inputs.codecov-node-version
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         # A coverage upload must never fail CI: the tests are the gate.
         continue-on-error: true
         with:
