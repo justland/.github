@@ -32,7 +32,7 @@ jobs:
         os: ${{ fromJson(inputs.os) }}
         node-version: ${{ fromJson(inputs.node_version) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       # The matrix key is `node-version` (hyphen). The steps below referenced
       # `matrix.node_version` (underscore), which does not exist, so setup-node received
