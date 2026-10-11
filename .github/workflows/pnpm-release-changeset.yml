@@ -2,9 +2,9 @@ name: pnpm-release-changeset
 # Token-based changesets release. Requires the NPM_TOKEN and CI_GITHUB_TOKEN secrets.
 #
 # Prefer pnpm-release-changeset-oidc.yml for new callers: it needs neither secret,
-# publishing through npm trusted publishing and pushing the version PR with a repobuddy
-# App token (or the built-in GITHUB_TOKEN). This workflow is kept, and kept working, for
-# repos that have not registered a trusted publisher yet.
+# publishing through npm trusted publishing and pushing the version PR with the built-in
+# GITHUB_TOKEN. This workflow is kept, and kept working, for repos that have not
+# registered a trusted publisher yet.
 on:
   workflow_call:
     inputs:
