@@ -66,7 +66,7 @@ jobs:
       # want v2 should move to pnpm-release-changeset-oidc.yml, which is on it.
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2.1.2
         with:
           commit: 'chore: version packages'
           version: pnpm run version
