@@ -45,7 +45,7 @@ jobs:
         os: ${{ fromJson(inputs.os) }}
         node-version: ${{ fromJson(inputs.node-version) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       # v4 runs on the Node 20 runtime, which GitHub now emits a deprecation annotation
       # for on every single job of every consumer. v6 moves to a supported runtime.
       - uses: pnpm/action-setup@v6
